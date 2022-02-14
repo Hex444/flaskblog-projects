@@ -1,5 +1,5 @@
-from flask import Flask, render_template, url_for,flash,redirect, request
-from flaskblog.forms import registrationform, Loginform, UpdateAccountform
+from flask import Flask, render_template, url_for,flash,redirect, request, abort
+from flaskblog.forms import registrationform, Loginform, UpdateAccountform, PostForm
 from flaskblog.models import User,Post
 from flaskblog import app, db, bcrypt
 import secrets
@@ -7,23 +7,24 @@ from flask_login import login_user,logout_user, current_user,login_required
 import os
 from PIL import Image
 
-posts = [
-    {
-        "author": "max tennyson",
-        "title": "blog post 1",
-        "content": "blueprints of the omnitrix spread through the entire universe, the entire multiverse at danger",
-        "date_posted": "2 Feb, 2022"
-    },
-    {
-        "author": "Sherlock, a great thought to be dead detective",
-        "title": "blog post 2",
-        "content": "Rohit Ghosh caught to be stealing doughnuts from dunkin doughnuts, fined for $2000",
-        "date_posted": "3 Feb, 2022"
-    }
-]
+# posts = [
+#     {
+#         "author": "max tennyson",
+#         "title": "blog post 1",
+#         "content": "blueprints of the omnitrix spread through the entire universe, the entire multiverse at danger",
+#         "date_posted": "2 Feb, 2022"
+#     },
+#     {
+#         "author": "Sherlock, a great thought to be dead detective",
+#         "title": "blog post 2",
+#         "content": "Rohit Ghosh caught to be stealing doughnuts from dunkin doughnuts, fined for $2000",
+#         "date_posted": "3 Feb, 2022"
+#     }
+# ]
 
 @app.route("/")
 def hello_world():
+    posts = Post.query.all()
     return render_template("home.html", all_posts=posts)
 
 @app.route("/about")
@@ -71,7 +72,7 @@ def save_picture(form_picture):
     i = Image.open(form_picture)
     i.thumbnail(output_size)
     i.save(picture_path)
-    
+
     return picture_fn
 
 
@@ -94,3 +95,38 @@ def account():
         form.email.data = current_user.email
     image_file = url_for('static', filename='profile_pics/' + current_user.image_file)
     return render_template('account.html', title="account", image_file=image_file, form=form)
+
+@app.route('/post/new', methods=['GET', 'POST'])
+@login_required
+def new_post():
+    form = PostForm()
+    if form.validate_on_submit():
+        post = Post(title=form.title.data, content=form.content.data, author=current_user)
+        db.session.add(post)
+        db.session.commit()
+        flash('your post has been created!', 'success')
+        return redirect(url_for('hello_world'))
+    return render_template('create_post.html', title="New Post", form=form, legend="New Post")
+
+@app.route('/post/<int:post_id>')
+def post(post_id):
+    post = Post.query.get_or_404(post_id)
+    return render_template('post.html', title=post.title, post=post)
+
+@app.route('/post/<int:post_id>/update', methods=['POST', 'GET'])
+@login_required
+def update_post(post_id):
+    post = Post.query.get_or_404(post_id)
+    if post.author != current_user:
+        abort(403)
+    form = PostForm()
+    if form.validate_on_submit():
+        post.title = form.title.data
+        post.content = form.content.data
+        db.session.commit()
+        flash('your post has been updated!', 'success')
+        return redirect(url_for('post', post_id=post.id))
+    elif request.method == 'GET':
+        form.title.data = post.title
+        form.content.data = post.content
+    return render_template('create_post.html', title="Update Post", form=form, legend="Update Post")
