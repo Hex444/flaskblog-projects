@@ -1,11 +1,17 @@
 from flask import Flask, render_template, url_for,flash,redirect, request, abort
-from flaskblog.forms import registrationform, Loginform, UpdateAccountform, PostForm
+from flaskblog.forms import Registrationform, Loginform, UpdateAccountform, PostForm
 from flaskblog.models import User,Post
 from flaskblog import app, db, bcrypt
 import secrets
 from flask_login import login_user,logout_user, current_user,login_required
 import os
 from PIL import Image
+
+emojis={
+    "smile":"😁",
+    "upside-down-smile":"🙃",
+    "tools":"🛠"
+}
 
 # posts = [
 #     {
@@ -34,7 +40,7 @@ def about():
 
 @app.route("/register", methods=['GET', 'POST'])
 def register():
-    form = registrationform()
+    form = Registrationform()
     if form.validate_on_submit():
         hashed_pw = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
         user = User(username=form.username.data, email=form.email.data, password=hashed_pw)

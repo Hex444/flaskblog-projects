@@ -1,4 +1,6 @@
 from operator import length_hint
+from tokenize import String
+from wsgiref.validate import validator
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, BooleanField, FileField, TextAreaField
 from wtforms.validators import *
@@ -6,7 +8,7 @@ from flaskblog.models import User
 from flask_login import current_user
 from flask_wtf.file import FileAllowed
 
-class registrationform(FlaskForm):
+class Registrationform(FlaskForm):
     username = StringField('username', validators=[DataRequired(), Length(min=2, max=20)])
     email = StringField("email", validators=[DataRequired(), Email()])
     password = PasswordField("password", validators=[DataRequired(), Length(min=8, max=100)])
@@ -37,7 +39,7 @@ class UpdateAccountform(FlaskForm):
     username = StringField('username', validators=[DataRequired(), Length(min=2, max=20)])
     email = StringField("email", validators=[DataRequired(), Email()])
 
-    picture = FileField('Update Profile Picture', validators=[FileAllowed(['jpg', 'png'])])
+    picture = FileField('Update Profile Picture', validators=[FileAllowed(['jpg', 'png','jpeg'])])
     submit = SubmitField("Update")
 
     def validate_username(self, username):
@@ -56,3 +58,12 @@ class PostForm(FlaskForm):
     title = StringField('Title', validators=[DataRequired()])
     content = TextAreaField("Content", validators=[DataRequired()])
     submit = SubmitField('Post')
+
+class RequestResetForm(FlaskForm):
+    email = StringField("email", validators=[DataRequired(), Email()])
+    submit = SubmitField('Request Password Reset')
+    
+    def validate_email(self, email):
+        user = User.query.filter_by(email=email.data).first()
+        if user:
+            raise ValidationError('email is Taken please choose a different one')
