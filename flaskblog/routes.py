@@ -1,11 +1,12 @@
 from flask import Flask, render_template, url_for,flash,redirect, request, abort
-from flaskblog.forms import Registrationform, Loginform, UpdateAccountform, PostForm
+from flaskblog.forms import Registrationform, Loginform, UpdateAccountform, PostForm,ResetPasswordForm,RequestResetForm
 from flaskblog.models import User,Post
-from flaskblog import app, db, bcrypt
+from flaskblog import app, db, bcrypt,mail
 import secrets
 from flask_login import login_user,logout_user, current_user,login_required
 import os
 from PIL import Image
+from flask_mail import Message
 
 emojis={
     "smile":"😁",
@@ -157,4 +158,51 @@ def user_posts(username):
     posts = Post.query.filter_by(author=user)\
         .order_by(Post.date_posted.desc())\
         .paginate(per_page=5, page=page)
-    return render_template("user_posts.html", posts=posts, user=user)
+    return render_template("user_posts.html", posts=posts, user=user,emojis=emojis)
+
+def send_reset_email(user):
+    token=user.get_reset_token()
+    msg=Message('Password Reset Request', sender=str(os.environ.get('MAIL_USERNAME')),
+                recipients=[user.email],)
+    msg.body = f'''To reset Your Password, visit the following link:
+{url_for('reset_token', token=token, _external=True)} {emojis.get('smile')}
+
+If you did not make this request then simply ignore this email and no changed will be made
+'''
+    mail.send(msg)
+
+@app.route('/reset_password', methods=['POST','GET'])
+def reset_request():
+    if current_user.is_authenticated:
+        return redirect(url_for('hello_world'))
+    form=RequestResetForm()
+    if form.validate_on_submit():
+        user=User.query.filter_by(email=form.email.data).first()
+        send_reset_email(user)
+        flash('an email has been sent with instructions to reset your password', 'info')
+        return redirect(url_for('login'))
+
+    return render_template('reset_request.html', title='Reset Password', form=form)
+
+
+
+@app.route('/reset_password/<token>', methods=['POST','GET'])
+def reset_token(token):
+    if current_user.is_authenticated:
+        return redirect(url_for('hello_world'))
+    user=User.verify_reset_token(token)
+    if user is None:
+        flash('That is an invalid or expired Token', 'warn')
+        return redirect(url_for('reset_request'))
+    form=ResetPasswordForm()
+    if form.validate_on_submit():
+        hashed_pw = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
+        user.password=hashed_pw
+        db.session.commit()
+        flash(f'Password Updated {emojis.get("upside-down-smile")}!', "success")
+        return redirect(url_for('login'))
+    return render_template('reset_token.html', title='Reset Password', form=form)
+
+
+
+# smtp acess is blocked in server service providers lel

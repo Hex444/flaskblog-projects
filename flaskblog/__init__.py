@@ -19,7 +19,7 @@ login_manager.login_view = 'login'
 login_manager.login_message_category = 'info'
 app.config.update(
     MAIL_SERVER="smtp.gmail.com",
-    MAIL_PORT="465",
+    MAIL_PORT=587,
     MAIL_USERR_SSL=True,
     MAIL_USERNAME=os.environ.get('MAIL_USERNAME'),
     MAIL_PASSWORD=os.environ.get('MAIL_PASS')
