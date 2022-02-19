@@ -205,4 +205,4 @@ def reset_token(token):
 
 
 
-# smtp acess is blocked in server service providers lel
+# smtp acess is blocked in server service providers lol
