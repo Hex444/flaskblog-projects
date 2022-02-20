@@ -6,3 +6,4 @@ if __name__ == "__main__":
 # 11
 # 24:33
 # fix deleteposterror
+# check if reset_password is working properly

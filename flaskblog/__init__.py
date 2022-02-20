@@ -6,28 +6,21 @@ from flask_bcrypt import Bcrypt
 from flask_login import LOGIN_MESSAGE, LoginManager
 import os
 from flask_mail import Mail
+from flaskblog.config import Config
 
 app = Flask(__name__)
-app.config["SECRET_KEY"] = '5mLwDAO8umfBU3AYpIGsV2YlF74o0airrXZfNXfgr9J2duPtZE3mo5fTgYdd'
 bcrypt = Bcrypt(app)
 # db
 db = SQLAlchemy(app)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db' 
+
 
 # login_manager
 login_manager = LoginManager(app)
 login_manager.login_view = 'users.login'
 login_manager.login_message_category = 'info'
 
-# email
-app.config.update(
-    MAIL_SERVER="smtp.gmail.com",
-    MAIL_PORT=587,
-    MAIL_USERR_SSL=True,
-    MAIL_USERNAME=os.environ.get('MAIL_USERNAME'),
-    MAIL_PASSWORD=os.environ.get('MAIL_PASS')
-)
-app.config['MAIL_USE_TLS'] = True
+app.config.from_object(Config)
+
 mail=Mail(app)
 
 from flaskblog.users.routes import users
