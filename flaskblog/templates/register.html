@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-
+<!-- url_for( -->
 {% block content %}
     <div class="content-section">
         <form method="POST" action="">
@@ -71,7 +71,7 @@
     </div>
     <div class="border-top pt-3">
         <small class="text-muted">
-            already have an account? <a href="{{ url_for('login') }}" class="ml-2">log In</a>
+            already have an account? <a href="{{ url_for('users.login') }}" class="ml-2">log In</a>
         </small>
     </div>
 {% endblock content %}
